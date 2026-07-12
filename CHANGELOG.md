@@ -1,3 +1,10 @@
+## [0.14.9](https://github.com/Rememorio/refined-leetcode/compare/v0.14.8...v0.14.9) (2026-07-12)
+
+
+### Bug Fixes
+
+* move EntrantHub bridge offscreen ([9023554](https://github.com/Rememorio/refined-leetcode/commit/9023554305de17d0e112741b10a21da60d172738))
+
 ## [0.14.8](https://github.com/Rememorio/refined-leetcode/compare/v0.14.7...v0.14.8) (2026-07-12)
 
 
