@@ -1,3 +1,10 @@
+## [0.14.10](https://github.com/Rememorio/refined-leetcode/compare/v0.14.9...v0.14.10) (2026-07-12)
+
+
+### Bug Fixes
+
+* align development manifest ([ea9d26f](https://github.com/Rememorio/refined-leetcode/commit/ea9d26fc7586aa3f2e75c5b89cce2786a7aca991))
+
 ## [0.14.9](https://github.com/Rememorio/refined-leetcode/compare/v0.14.8...v0.14.9) (2026-07-12)
 
 
