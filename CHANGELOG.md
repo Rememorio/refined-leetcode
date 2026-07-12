@@ -1,3 +1,10 @@
+## [0.14.5](https://github.com/Rememorio/refined-leetcode/compare/v0.14.4...v0.14.5) (2026-07-12)
+
+
+### Bug Fixes
+
+* migrate rating predictions to EntrantHub ([2ac58c7](https://github.com/Rememorio/refined-leetcode/commit/2ac58c72e14777343900b1e67c266eb5ef3b77dc))
+
 ## [0.14.4](https://github.com/XYShaoKang/refined-leetcode/compare/v0.14.3...v0.14.4) (2024-09-29)
 
 
