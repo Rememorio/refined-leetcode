@@ -1,3 +1,10 @@
+## [0.14.7](https://github.com/Rememorio/refined-leetcode/compare/v0.14.6...v0.14.7) (2026-07-12)
+
+
+### Bug Fixes
+
+* retry EntrantHub navigation failures ([0e341a6](https://github.com/Rememorio/refined-leetcode/commit/0e341a64c37bfb96297c31a525966215950cfd0e))
+
 ## [0.14.6](https://github.com/Rememorio/refined-leetcode/compare/v0.14.5...v0.14.6) (2026-07-12)
 
 
