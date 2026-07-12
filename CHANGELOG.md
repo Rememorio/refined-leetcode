@@ -1,3 +1,10 @@
+## [0.14.6](https://github.com/Rememorio/refined-leetcode/compare/v0.14.5...v0.14.6) (2026-07-12)
+
+
+### Bug Fixes
+
+* bypass EntrantHub Cloudflare challenge ([89f6108](https://github.com/Rememorio/refined-leetcode/commit/89f6108827efedaf69c1aa9c957ae9bcd88e26c4))
+
 ## [0.14.5](https://github.com/Rememorio/refined-leetcode/compare/v0.14.4...v0.14.5) (2026-07-12)
 
 
