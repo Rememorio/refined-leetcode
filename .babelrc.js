@@ -3,7 +3,7 @@
  * @param {import('@babel/core').ConfigAPI} api
  * @returns
  */
- module.exports = api => {
+module.exports = api => {
   const BABEL_ENV = api.env()
 
   let targets = {}
@@ -13,7 +13,8 @@
     targets =
       'last 1 chrome version, last 1 firefox version, last 1 safari version'
   } else if (BABEL_ENV === 'production') {
-    targets = 'last 1 chrome version, last 1 firefox version, last 1 safari version'
+    targets =
+      'last 1 chrome version, last 1 firefox version, last 1 safari version'
   }
 
   /**
@@ -35,7 +36,7 @@
           },
         },
       ],
-      '@babel/plugin-proposal-class-properties',
+      '@babel/plugin-transform-class-properties',
       BABEL_ENV === 'development' && 'react-refresh/babel',
     ].filter(Boolean),
   }

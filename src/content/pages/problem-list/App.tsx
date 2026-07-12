@@ -1,12 +1,11 @@
 import Rank from '../problemset/Rank'
-import { FC, useEffect, useState } from 'react'
+import { FC, useState } from 'react'
 import { useAppSelector, useEffectMount } from '@/hooks'
 import { selectOptions } from '../global/optionsSlice'
 import { awaitFn, problemsetPageIsLoad } from '@/utils'
 import { Portal } from '@/components/Portal'
 import ProblemList from './ProblemList'
 import { withPage } from '@/hoc'
-// import { fixRandom } from './fixRandom'
 import { useSetProblemListRoot } from './useSetProblemListRoot'
 
 const App: FC = () => {
@@ -25,11 +24,6 @@ const App: FC = () => {
     isLoad,
     setProblemListRoot
   )
-
-  useEffect(() => {
-    if (!isLoad) return
-    // fixRandom()
-  }, [isLoad])
 
   if (!isLoad) return null
   const showProblemList = !!options?.problemListPage.problemList

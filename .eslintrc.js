@@ -72,6 +72,7 @@ const eslintConfig = {
     'react/react-in-jsx-scope': 'off',
 
     'react/prop-types': 'off',
+    'react/no-unknown-property': ['error', { ignore: ['css'] }],
     'react/self-closing-comp': [
       'error',
       {
@@ -80,16 +81,13 @@ const eslintConfig = {
       },
     ],
 
-    '@typescript-eslint/ban-types': [
-      'error',
-      {
-        extendDefaults: true,
-        types: {
-          '{}': false,
-        },
-      },
-    ],
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    // Keep the upgraded TypeScript rules informative while legacy modules are
+    // migrated incrementally.
+    '@typescript-eslint/no-empty-object-type': 'off',
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-unused-expressions': 'warn',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 
     // https://styled-components.com/docs/tooling#enforce-macro-imports
     'no-restricted-imports': [

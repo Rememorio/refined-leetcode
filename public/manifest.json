@@ -3,7 +3,7 @@
   "description": "LeetCode 网页扩展",
   "version": "0.0.0",
   "manifest_version": 3,
-  "homepage_url": "https://github.com/XYShaoKang/refined-leetcode",
+  "homepage_url": "https://github.com/Rememorio/refined-leetcode",
   "default_locale": "zh_CN",
   "icons": {
     "16": "icons/icon-16.png",
@@ -12,26 +12,14 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "/content.bundle.js",
-        "/*.map",
-        "/file-icons/*.svg"
-      ],
-      "matches": [
-        "*://leetcode-cn.com/*",
-        "*://leetcode.cn/*"
-      ]
+      "resources": ["/content.bundle.js", "/*.map", "/file-icons/*.svg"],
+      "matches": ["*://leetcode-cn.com/*", "*://leetcode.cn/*"]
     }
   ],
   "content_scripts": [
     {
-      "matches": [
-        "https://leetcode-cn.com/*",
-        "https://leetcode.cn/*"
-      ],
-      "js": [
-        "content-load.bundle.js"
-      ]
+      "matches": ["https://leetcode-cn.com/*", "https://leetcode.cn/*"],
+      "js": ["content-load.bundle.js"]
     }
   ],
   "background": {
@@ -42,23 +30,16 @@
     "default_popup": "popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; script-src-elem 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://leetcode-rating-predictor.herokuapp.com https://leetcode-predictor.herokuapp.com https://leetcode-cn.com https://leetcode.cn https://api.entranthub.com https://leetcode.com"
+    "extension_pages": "default-src 'self'; script-src 'self'; script-src-elem 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://leetcode-cn.com https://leetcode.cn https://api.entranthub.com https://leetcode.com"
   },
-  "permissions": [
-    "storage"
-  ],
+  "permissions": ["storage"],
   "host_permissions": [
     "https://leetcode-cn.com/*",
     "https://leetcode.cn/*",
-    "https://leetcode-rating-predictor.herokuapp.com/*",
-    "https://leetcode-predictor.herokuapp.com/*",
     "https://api.entranthub.com/*",
     "https://leetcode.com/*"
   ],
   "externally_connectable": {
-    "matches": [
-      "https://leetcode-cn.com/*",
-      "https://leetcode.cn/*"
-    ]
+    "matches": ["https://leetcode-cn.com/*", "https://leetcode.cn/*"]
   }
 }

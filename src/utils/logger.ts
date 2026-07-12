@@ -35,7 +35,7 @@ const levelMap = new Map([
 // REFINED_LEETCODE_LOG_LEVEL 的值由 webpack.DefinePlugin 提供
 const logLevel =
   levelMap.get(
-    (typeof REFINED_LEETCODE_LOG_LEVEL === undefined
+    (typeof REFINED_LEETCODE_LOG_LEVEL === 'undefined'
       ? 'silent'
       : REFINED_LEETCODE_LOG_LEVEL
     ).toLocaleLowerCase()

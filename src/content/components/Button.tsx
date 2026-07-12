@@ -1,27 +1,24 @@
-import { ForwardedRef, forwardRef, ReactNode } from 'react'
-import styled from 'styled-components/macro'
+import { forwardRef, ReactNode } from 'react'
+import styled, { FlattenSimpleInterpolation } from 'styled-components/macro'
 
-import { SCProps, StyledComponent } from './utils'
 import { rotate360Deg } from './animation'
 
-interface ButtonOwnerProps {
-  disabled?: boolean
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean
   children: ReactNode
+  css?: FlattenSimpleInterpolation
 }
 
-const Button: StyledComponent<ButtonOwnerProps, 'button'> = forwardRef(
-  function Button<AsC extends string | React.ComponentType = 'span'>(
-    { children, disabled, loading, ...props }: SCProps<ButtonOwnerProps, AsC>,
-    ref: ForwardedRef<AsC>
-  ) {
-    return (
-      <ButtonStyled ref={ref} disabled={disabled || loading} {...props}>
-        {loading ? <Loading /> : children}
-      </ButtonStyled>
-    )
-  }
-)
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { children, disabled, loading, ...props },
+  ref
+) {
+  return (
+    <ButtonStyled ref={ref} disabled={disabled || loading} {...props}>
+      {loading ? <Loading /> : children}
+    </ButtonStyled>
+  )
+})
 
 export default Button
 

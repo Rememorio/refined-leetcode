@@ -5,6 +5,10 @@ const config = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/content/$1',
+    '^src/(.*)$': '<rootDir>/src/$1',
+  },
   testEnvironment: 'jsdom',
 }
 

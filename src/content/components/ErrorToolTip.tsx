@@ -12,13 +12,11 @@ interface ErrorToolTipOwnerProps {
 
 type ErrorToolTipProps = Omit<
   ComponentProps<typeof ToolTip>,
-  keyof ErrorToolTipOwnerProps
+  keyof ErrorToolTipOwnerProps | 'title' | 'open' | 'arrow' | 'icon'
 > &
   ErrorToolTipOwnerProps
 
-const ErrorToolTip: FC<
-  Partial<ComponentProps<typeof ToolTip>> & ErrorToolTipOwnerProps
-> = ({ error, children, ...props }: ErrorToolTipProps) => {
+const ErrorToolTip: FC<ErrorToolTipProps> = ({ error, children, ...props }) => {
   return (
     <ToolTip
       {...props}

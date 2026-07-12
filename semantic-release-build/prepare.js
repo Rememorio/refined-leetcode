@@ -2,20 +2,18 @@ const path = require('path')
 const fs = require('fs')
 const SemanticReleaseError = require('@semantic-release/error')
 const archiver = require('archiver')
-const ChromeExtension = require('crx')
 
-const getKey = () => {
-  let { PRIVATE_KEY, PRIVATE_KEY_PATH } = process.env
-  if (PRIVATE_KEY) return Buffer.from(PRIVATE_KEY, 'utf-8')
-
-  try {
-    const keyPath = PRIVATE_KEY_PATH || path.resolve('key.pem')
-    fs.accessSync(keyPath, fs.constants.W_OK)
-    return fs.readFileSync(keyPath)
-  } catch (error) {
-    throw new SemanticReleaseError('请设置 PRIVATE_KEY 或 PRIVATE_KEY_PATH')
-  }
-}
+const packZip = (source, destination) =>
+  new Promise((resolve, reject) => {
+    const archive = archiver('zip', { zlib: { level: 9 } })
+    const output = fs.createWriteStream(destination)
+    output.on('close', resolve)
+    output.on('error', reject)
+    archive.on('error', reject)
+    archive.pipe(output)
+    archive.directory(source, false)
+    archive.finalize()
+  })
 
 const prepare = async (pluginConfig = {}, context) => {
   let { dist = 'dist', name = 'extension' } = pluginConfig
@@ -54,28 +52,7 @@ const prepare = async (pluginConfig = {}, context) => {
 
   // 打包成 zip
   logger.log('打包 zip')
-  const archive = archiver('zip', { zlib: { level: 9 } })
-  const output = path.resolve(`${name}.zip`)
-  archive.pipe(fs.createWriteStream(output))
-  archive.directory(dist, false)
-  archive.finalize()
-
-  // 打包为 crx
-  logger.log('打包 crx')
-  await new ChromeExtension({ privateKey: getKey() })
-    .load(dist)
-    .then(crx => crx.pack())
-    .then(crxBuffer => {
-      fs.mkdir
-      fs.writeFileSync(path.resolve(`${name}.crx`), crxBuffer)
-    })
-
-  logger.log('打包 zip')
-  const crxarchive = archiver('zip', { zlib: { level: 9 } })
-  const crxoutput = path.resolve(`${name}.crx.zip`)
-  crxarchive.pipe(fs.createWriteStream(crxoutput))
-  crxarchive.file(path.resolve(`${name}.crx`), { name: `${name}.crx` })
-  crxarchive.finalize()
+  await packZip(dist, path.resolve(`${name}.zip`))
 }
 
 module.exports = prepare

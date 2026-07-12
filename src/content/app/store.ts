@@ -16,8 +16,6 @@ import favoritesReducer from '@/pages/problem-list/favoriteSlice'
 import questionsReducer from '@/pages/problemset/questionsSlice'
 
 // debug
-// import logger from 'redux-logger'
-// import devToolsEnhancer from 'remote-redux-devtools'
 const enhancers: ConfigureStoreOptions['enhancers'] = [
   // 配置 Redux DevTools
   // devToolsEnhancer({

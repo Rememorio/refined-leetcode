@@ -1,4 +1,4 @@
-import { sleep } from '@/utils'
+import { sleep } from './sleep'
 
 export type EntrantHubPredictorType = {
   data_region: string
@@ -20,8 +20,7 @@ type RankingResponse = {
   items: Ranking[]
 }
 
-const API =
-  'https://api.entranthub.com/api/v1/contests/leetcode/contests'
+const API = 'https://api.entranthub.com/api/v1/contests/leetcode/contests'
 
 const fetchPrediction = async (
   contestSlug: string,

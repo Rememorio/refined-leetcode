@@ -29,16 +29,8 @@ module.exports = {
       {
         assets: [
           {
-            path: 'refined-leetcode.crx',
-            name: 'refined-leetcode-${nextRelease.gitTag}.crx',
-          },
-          {
             path: 'refined-leetcode.zip',
             name: 'refined-leetcode-${nextRelease.gitTag}.zip',
-          },
-          {
-            path: 'refined-leetcode.crx.zip',
-            name: 'refined-leetcode-${nextRelease.gitTag}.crx.zip',
           },
         ],
       },

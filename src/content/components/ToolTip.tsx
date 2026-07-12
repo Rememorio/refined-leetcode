@@ -4,12 +4,10 @@ import React, {
   useCallback,
   ReactElement,
   cloneElement,
-  ForwardedRef,
 } from 'react'
 import { useHover } from '@/hooks'
 import { setRef } from '@/utils'
 import { Popper, Placement, PopperProps } from './Popper'
-import { StyledComponent, SCProps } from './utils'
 
 export interface TooltipOwnerProps {
   title: ReactElement | string
@@ -22,10 +20,12 @@ export interface TooltipOwnerProps {
   keep?: boolean
 }
 
-export const ToolTip: StyledComponent<TooltipOwnerProps & PopperProps, 'span'> =
-  forwardRef(function ToolTip1<
-    AsC extends string | React.ComponentType = 'span'
-  >(
+type ToolTipProps = TooltipOwnerProps &
+  PopperProps &
+  Omit<React.HTMLAttributes<HTMLSpanElement>, 'title' | 'children'>
+
+export const ToolTip = forwardRef<HTMLSpanElement, ToolTipProps>(
+  function ToolTip1(
     {
       title,
       placement = 'top',
@@ -36,8 +36,8 @@ export const ToolTip: StyledComponent<TooltipOwnerProps & PopperProps, 'span'> =
       keep,
       children,
       ...props
-    }: SCProps<TooltipOwnerProps & PopperProps, AsC>,
-    ref: ForwardedRef<AsC>
+    }: ToolTipProps,
+    ref
   ) {
     const [setHoverRef, hover] = useHover<HTMLElement>(delay ?? 100)
     const [setPopperHoverRef, popperHover] = useHover(delay ?? 100, [
@@ -72,12 +72,11 @@ export const ToolTip: StyledComponent<TooltipOwnerProps & PopperProps, 'span'> =
             ref={setPopperHoverRef}
             arrow={arrow}
           >
-            <>
-              {icon}
-              {title}
-            </>
+            {icon}
+            {title}
           </Popper>
         ) : null}
       </>
     )
-  })
+  }
+)
