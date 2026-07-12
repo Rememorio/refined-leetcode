@@ -12,6 +12,10 @@ const common = {
     options: path.join(__dirname, '../src/options/index.tsx'),
     content: path.join(__dirname, '../src/content/index.tsx'),
     'content-load': path.join(__dirname, '../src/content/load.ts'),
+    'entrant-hub-page': path.join(
+      __dirname,
+      '../src/content/entrantHubPage.ts'
+    ),
     background: path.join(__dirname, '../src/background/index.ts'),
   },
   output: {

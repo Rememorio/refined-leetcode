@@ -20,6 +20,11 @@
     {
       "matches": ["https://leetcode-cn.com/*", "https://leetcode.cn/*"],
       "js": ["content-load.bundle.js"]
+    },
+    {
+      "matches": ["https://api.entranthub.com/*"],
+      "js": ["entrant-hub-page.bundle.js"],
+      "run_at": "document_start"
     }
   ],
   "background": {
