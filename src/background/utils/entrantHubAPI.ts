@@ -18,33 +18,42 @@ type RankingResponse = {
   items: Ranking[]
 }
 
-const API = 'https://api.entranthub.com/api/v1/contests/leetcode/contests'
-const PAGE_TIMEOUT = 20_000
-const PAGE_RETRIES = 2
-const BLANK_PAGE_TIMEOUT = 2_000
-
-type PageWaiter = {
-  url: string
+type RequestWaiter = {
   resolve: (data: RankingResponse) => void
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
 }
 
-const pageWaiters = new Map<number, PageWaiter>()
+const API = 'https://api.entranthub.com/api/v1/contests/leetcode/contests'
+const OFFSCREEN_DOCUMENT = 'offscreen.html'
+const PAGE_TIMEOUT = 20_000
+const BRIDGE_TIMEOUT = 10_000
+const PAGE_RETRIES = 2
+
+const requestWaiters = new Map<string, RequestWaiter>()
+const readyWaiters = new Set<() => void>()
+let creatingOffscreen: Promise<void> | undefined
+let requestSequence = 0
+let bridgeReady = false
 
 if (typeof chrome !== 'undefined') {
-  chrome.runtime.onMessage.addListener((message, sender) => {
-    if (message.type !== 'entrant-hub-page') return
+  chrome.runtime.onMessage.addListener(message => {
+    if (message.type === 'entrant-hub-frame-ready') {
+      bridgeReady = true
+      for (const resolve of readyWaiters) resolve()
+      readyWaiters.clear()
+      return
+    }
 
-    const tabId = sender.tab?.id
-    if (tabId === undefined) return
+    if (message.type !== 'entrant-hub-frame-result') return
 
-    const waiter = pageWaiters.get(tabId)
-    if (!waiter || waiter.url !== message.url) return
+    const waiter = requestWaiters.get(message.requestId)
+    if (!waiter) return
 
     clearTimeout(waiter.timer)
-    pageWaiters.delete(tabId)
-    waiter.resolve(message.data)
+    requestWaiters.delete(message.requestId)
+    if (message.error) waiter.reject(new Error(message.error))
+    else waiter.resolve(message.data)
   })
 }
 
@@ -56,56 +65,93 @@ const rankingUrl = (contestSlug: string, username?: string) => {
   return url.toString()
 }
 
-const waitForRankingPage = (tabId: number, url: string) =>
-  new Promise<RankingResponse>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      pageWaiters.delete(tabId)
-      reject(new Error('EntrantHub page timed out'))
-    }, PAGE_TIMEOUT)
-
-    pageWaiters.set(tabId, { url, resolve, reject, timer })
-    chrome.tabs.update(tabId, { url }).catch(error => {
-      clearTimeout(timer)
-      pageWaiters.delete(tabId)
-      reject(error)
-    })
+const hasOffscreenDocument = async () => {
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
   })
+  return contexts.length > 0
+}
 
-const resetBridgePage = (tabId: number) =>
+const waitForBridgeReady = () =>
   new Promise<void>((resolve, reject) => {
-    const cleanup = () => {
-      clearTimeout(timer)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
-    }
+    const timer = setTimeout(() => {
+      readyWaiters.delete(done)
+      reject(new Error('EntrantHub offscreen bridge timed out'))
+    }, BRIDGE_TIMEOUT)
     const done = () => {
-      cleanup()
+      clearTimeout(timer)
+      readyWaiters.delete(done)
       resolve()
     }
-    const onUpdated: Parameters<typeof chrome.tabs.onUpdated.addListener>[0] = (
-      updatedTabId,
-      changeInfo
-    ) => {
-      if (updatedTabId === tabId && changeInfo.status === 'complete') done()
-    }
-    const timer = setTimeout(done, BLANK_PAGE_TIMEOUT)
-
-    chrome.tabs.onUpdated.addListener(onUpdated)
-    chrome.tabs.update(tabId, { url: 'about:blank' }).catch(error => {
-      cleanup()
-      reject(error)
-    })
+    readyWaiters.add(done)
   })
 
-const loadRankingPage = async (
-  tabId: number,
-  url: string
-): Promise<RankingResponse> => {
+const ensureOffscreenDocument = async () => {
+  if (await hasOffscreenDocument()) {
+    if (!bridgeReady) {
+      const ready = waitForBridgeReady()
+      await chrome.runtime.sendMessage({
+        target: 'entrant-hub-offscreen',
+        type: 'ping',
+      })
+      await ready
+    }
+  } else {
+    bridgeReady = false
+    const ready = waitForBridgeReady()
+    if (!creatingOffscreen) {
+      creatingOffscreen = chrome.offscreen
+        .createDocument({
+          url: OFFSCREEN_DOCUMENT,
+          reasons: ['DOM_SCRAPING'],
+          justification: 'Load EntrantHub predictions without visible windows',
+        })
+        .finally(() => {
+          creatingOffscreen = undefined
+        })
+    }
+    await creatingOffscreen
+    await ready
+  }
+}
+
+const closeOffscreenDocument = async () => {
+  bridgeReady = false
+  if (await hasOffscreenDocument()) {
+    await chrome.offscreen.closeDocument().catch(() => undefined)
+  }
+}
+
+const requestRankingPage = (url: string) =>
+  new Promise<RankingResponse>((resolve, reject) => {
+    const requestId = `${Date.now()}-${requestSequence++}`
+    const timer = setTimeout(() => {
+      requestWaiters.delete(requestId)
+      reject(new Error('EntrantHub offscreen request timed out'))
+    }, PAGE_TIMEOUT)
+
+    requestWaiters.set(requestId, { resolve, reject, timer })
+    chrome.runtime
+      .sendMessage({
+        target: 'entrant-hub-frame',
+        type: 'fetch-ranking',
+        requestId,
+        url,
+      })
+      .catch(error => {
+        clearTimeout(timer)
+        requestWaiters.delete(requestId)
+        reject(error)
+      })
+  })
+
+const loadRankingPage = async (url: string): Promise<RankingResponse> => {
   let lastError = new Error('Failed to load EntrantHub page')
 
   for (let attempt = 0; attempt < PAGE_RETRIES; attempt++) {
     try {
-      await resetBridgePage(tabId)
-      return await waitForRankingPage(tabId, url)
+      await ensureOffscreenDocument()
+      return await requestRankingPage(url)
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
     }
@@ -114,38 +160,15 @@ const loadRankingPage = async (
   throw lastError
 }
 
-const createBridgeWindow = async () => {
-  const window = await chrome.windows.create({
-    url: 'about:blank',
-    type: 'popup',
-    focused: false,
-    state: 'minimized',
-  })
-  if (!window || window.id === undefined) {
-    throw new Error('Failed to create EntrantHub bridge window')
-  }
-
-  const [tab] = await chrome.tabs.query({ windowId: window.id })
-  if (tab?.id === undefined) {
-    await chrome.windows.remove(window.id).catch(() => undefined)
-    throw new Error('Failed to create EntrantHub bridge tab')
-  }
-
-  return { windowId: window.id, tabId: tab.id }
-}
-
 let sourceQueue = Promise.resolve()
 
 const readRankings = async (
-  tabId: number,
   contestSlug: string,
   users: { data_region: string; username: string }[]
 ): Promise<Ranking[]> => {
   const rankings: Ranking[] = []
   try {
-    rankings.push(
-      ...(await loadRankingPage(tabId, rankingUrl(contestSlug))).items
-    )
+    rankings.push(...(await loadRankingPage(rankingUrl(contestSlug))).items)
   } catch {
     // Missing bulk data falls back to per-user lookups below.
   }
@@ -162,7 +185,6 @@ const readRankings = async (
 
     try {
       const { items } = await loadRankingPage(
-        tabId,
         rankingUrl(contestSlug, user.username)
       )
       rankings.push(...items)
@@ -179,7 +201,7 @@ const readRankings = async (
   return rankings
 }
 
-const entrantHubTabSource = async (
+const entrantHubOffscreenSource = async (
   contestSlug: string,
   users: { data_region: string; username: string }[]
 ): Promise<Ranking[]> => {
@@ -190,19 +212,15 @@ const entrantHubTabSource = async (
   })
   await previous
 
-  let bridge: Awaited<ReturnType<typeof createBridgeWindow>> | undefined
   try {
-    bridge = await createBridgeWindow()
-    return await readRankings(bridge.tabId, contestSlug, users)
+    return await readRankings(contestSlug, users)
   } finally {
-    if (bridge) {
-      const waiter = pageWaiters.get(bridge.tabId)
-      if (waiter) {
-        clearTimeout(waiter.timer)
-        pageWaiters.delete(bridge.tabId)
-      }
-      await chrome.windows.remove(bridge.windowId).catch(() => undefined)
+    for (const [requestId, waiter] of requestWaiters) {
+      clearTimeout(waiter.timer)
+      waiter.reject(new Error('EntrantHub offscreen bridge closed'))
+      requestWaiters.delete(requestId)
     }
+    await closeOffscreenDocument()
     release()
   }
 }
@@ -210,11 +228,11 @@ const entrantHubTabSource = async (
 export const entrantHubPredictorApi = async (
   contestSlug: string,
   users: { data_region: string; username: string }[],
-  source = entrantHubTabSource
+  source = entrantHubOffscreenSource
 ): Promise<EntrantHubPredictorType[]> => {
   const rankings = await source(contestSlug, users)
 
-  return users.map(user => {
+  const result = users.map(user => {
     const item = rankings.find(
       item =>
         item.dataRegion.toLocaleLowerCase() ===
@@ -229,4 +247,6 @@ export const entrantHubPredictorApi = async (
       newRating: item?.newRating,
     }
   })
+
+  return result
 }

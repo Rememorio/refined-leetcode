@@ -12,10 +12,15 @@ const common = {
     options: path.join(__dirname, '../src/options/index.tsx'),
     content: path.join(__dirname, '../src/content/index.tsx'),
     'content-load': path.join(__dirname, '../src/content/load.ts'),
-    'entrant-hub-page': path.join(
+    'entrant-hub-frame': path.join(
       __dirname,
-      '../src/content/entrantHubPage.ts'
+      '../src/content/entrantHubFrame.ts'
     ),
+    'entrant-hub-main': path.join(
+      __dirname,
+      '../src/content/entrantHubMain.ts'
+    ),
+    offscreen: path.join(__dirname, '../src/offscreen/index.ts'),
     background: path.join(__dirname, '../src/background/index.ts'),
   },
   output: {
@@ -62,11 +67,18 @@ const common = {
       filename: 'popup.html',
       publicPath: '/',
     }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, '../public', 'offscreen.html'),
+      chunks: ['offscreen'],
+      filename: 'offscreen.html',
+      publicPath: '/',
+    }),
     new CopyPlugin({
       patterns: [
         { from: 'icons/*.png', context: path.resolve('public') },
         { from: 'file-icons/*.svg', context: path.resolve('public') },
         { from: '_locales', context: path.resolve('public'), to: '_locales' },
+        { from: 'rules.json', context: path.resolve('public') },
       ],
     }),
   ],

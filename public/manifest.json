@@ -22,9 +22,17 @@
       "js": ["content-load.bundle.js"]
     },
     {
-      "matches": ["https://api.entranthub.com/*"],
-      "js": ["entrant-hub-page.bundle.js"],
-      "run_at": "document_start"
+      "matches": ["https://entranthub.com/*"],
+      "js": ["entrant-hub-main.bundle.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://entranthub.com/*"],
+      "js": ["entrant-hub-frame.bundle.js"],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "background": {
@@ -35,9 +43,13 @@
     "default_popup": "popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; script-src-elem 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://leetcode-cn.com https://leetcode.cn https://api.entranthub.com https://leetcode.com"
+    "extension_pages": "default-src 'self'; script-src 'self'; script-src-elem 'self'; style-src 'self' 'unsafe-inline'; frame-src https://entranthub.com; connect-src 'self' https://leetcode-cn.com https://leetcode.cn https://api.entranthub.com https://leetcode.com"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage",
+    "offscreen",
+    "declarativeNetRequestWithHostAccess"
+  ],
   "host_permissions": [
     "https://leetcode-cn.com/*",
     "https://leetcode.cn/*",
@@ -46,5 +58,14 @@
   ],
   "externally_connectable": {
     "matches": ["https://leetcode-cn.com/*", "https://leetcode.cn/*"]
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "entrant_hub_frame",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
   }
 }
