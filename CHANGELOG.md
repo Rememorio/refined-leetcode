@@ -1,3 +1,10 @@
+## [0.14.8](https://github.com/Rememorio/refined-leetcode/compare/v0.14.7...v0.14.8) (2026-07-12)
+
+
+### Bug Fixes
+
+* hide EntrantHub bridge tabs ([f396b8a](https://github.com/Rememorio/refined-leetcode/commit/f396b8ab622a229301edc078e15131ff05d30c97))
+
 ## [0.14.7](https://github.com/Rememorio/refined-leetcode/compare/v0.14.6...v0.14.7) (2026-07-12)
 
 
