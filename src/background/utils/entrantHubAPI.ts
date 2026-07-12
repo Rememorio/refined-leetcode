@@ -21,6 +21,7 @@ type RankingResponse = {
 const API = 'https://api.entranthub.com/api/v1/contests/leetcode/contests'
 const PAGE_TIMEOUT = 20_000
 const PAGE_RETRIES = 2
+const BLANK_PAGE_TIMEOUT = 2_000
 
 type PageWaiter = {
   url: string
@@ -70,37 +71,81 @@ const waitForRankingPage = (tabId: number, url: string) =>
     })
   })
 
-const loadRankingPage = async (url: string): Promise<RankingResponse> => {
+const resetBridgePage = (tabId: number) =>
+  new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timer)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
+    const done = () => {
+      cleanup()
+      resolve()
+    }
+    const onUpdated: Parameters<typeof chrome.tabs.onUpdated.addListener>[0] = (
+      updatedTabId,
+      changeInfo
+    ) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') done()
+    }
+    const timer = setTimeout(done, BLANK_PAGE_TIMEOUT)
+
+    chrome.tabs.onUpdated.addListener(onUpdated)
+    chrome.tabs.update(tabId, { url: 'about:blank' }).catch(error => {
+      cleanup()
+      reject(error)
+    })
+  })
+
+const loadRankingPage = async (
+  tabId: number,
+  url: string
+): Promise<RankingResponse> => {
   let lastError = new Error('Failed to load EntrantHub page')
 
   for (let attempt = 0; attempt < PAGE_RETRIES; attempt++) {
-    const tab = await chrome.tabs.create({ active: false, url: 'about:blank' })
-    if (tab.id === undefined) throw new Error('Failed to create EntrantHub tab')
-
     try {
-      return await waitForRankingPage(tab.id, url)
+      await resetBridgePage(tabId)
+      return await waitForRankingPage(tabId, url)
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
-    } finally {
-      const waiter = pageWaiters.get(tab.id)
-      if (waiter) {
-        clearTimeout(waiter.timer)
-        pageWaiters.delete(tab.id)
-      }
-      await chrome.tabs.remove(tab.id).catch(() => undefined)
     }
   }
 
   throw lastError
 }
 
-const entrantHubTabSource = async (
+const createBridgeWindow = async () => {
+  const window = await chrome.windows.create({
+    url: 'about:blank',
+    type: 'popup',
+    focused: false,
+    state: 'minimized',
+  })
+  if (!window || window.id === undefined) {
+    throw new Error('Failed to create EntrantHub bridge window')
+  }
+
+  const [tab] = await chrome.tabs.query({ windowId: window.id })
+  if (tab?.id === undefined) {
+    await chrome.windows.remove(window.id).catch(() => undefined)
+    throw new Error('Failed to create EntrantHub bridge tab')
+  }
+
+  return { windowId: window.id, tabId: tab.id }
+}
+
+let sourceQueue = Promise.resolve()
+
+const readRankings = async (
+  tabId: number,
   contestSlug: string,
   users: { data_region: string; username: string }[]
 ): Promise<Ranking[]> => {
   const rankings: Ranking[] = []
   try {
-    rankings.push(...(await loadRankingPage(rankingUrl(contestSlug))).items)
+    rankings.push(
+      ...(await loadRankingPage(tabId, rankingUrl(contestSlug))).items
+    )
   } catch {
     // Missing bulk data falls back to per-user lookups below.
   }
@@ -117,6 +162,7 @@ const entrantHubTabSource = async (
 
     try {
       const { items } = await loadRankingPage(
+        tabId,
         rankingUrl(contestSlug, user.username)
       )
       rankings.push(...items)
@@ -131,6 +177,34 @@ const entrantHubTabSource = async (
   }
 
   return rankings
+}
+
+const entrantHubTabSource = async (
+  contestSlug: string,
+  users: { data_region: string; username: string }[]
+): Promise<Ranking[]> => {
+  const previous = sourceQueue
+  let release: () => void = () => undefined
+  sourceQueue = new Promise<void>(resolve => {
+    release = resolve
+  })
+  await previous
+
+  let bridge: Awaited<ReturnType<typeof createBridgeWindow>> | undefined
+  try {
+    bridge = await createBridgeWindow()
+    return await readRankings(bridge.tabId, contestSlug, users)
+  } finally {
+    if (bridge) {
+      const waiter = pageWaiters.get(bridge.tabId)
+      if (waiter) {
+        clearTimeout(waiter.timer)
+        pageWaiters.delete(bridge.tabId)
+      }
+      await chrome.windows.remove(bridge.windowId).catch(() => undefined)
+    }
+    release()
+  }
 }
 
 export const entrantHubPredictorApi = async (

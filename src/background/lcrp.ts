@@ -55,6 +55,38 @@ async function getFileIcons(
 }
 
 const cache = new Map<string, Map<string, EntrantHubPredictorType>>()
+const predictionQueues = new Map<string, Promise<void>>()
+
+const fetchMissingPredictions = async (
+  contestSlug: string,
+  users: { username: string; region: string }[],
+  userCache: Map<string, EntrantHubPredictorType>
+) => {
+  const previous = predictionQueues.get(contestSlug) ?? Promise.resolve()
+  const current = previous
+    .catch(() => undefined)
+    .then(async () => {
+      const missing = users
+        .filter(user => !userCache.has(gkey(user.region, user.username)))
+        .map(user => ({ data_region: user.region, username: user.username }))
+      if (!missing.length) return
+
+      const data = await predictorApi(contestSlug, missing)
+      for (const item of data) {
+        userCache.set(gkey(item.data_region, item.username), item)
+      }
+    })
+  predictionQueues.set(contestSlug, current)
+
+  try {
+    await current
+  } finally {
+    if (predictionQueues.get(contestSlug) === current) {
+      predictionQueues.delete(contestSlug)
+    }
+  }
+}
+
 async function getPredictionHandle(
   message: GetPredictionMessage,
   sender: chrome.runtime.MessageSender,
@@ -67,21 +99,13 @@ async function getPredictionHandle(
     cache.set(contestSlug, userCache)
   }
   try {
-    const tmp = users
-      .filter(a => !userCache.has(gkey(a.region, a.username)))
-      .map(a => ({ data_region: a.region, username: a.username }))
-    if (tmp.length) {
-      const data = await predictorApi(contestSlug, tmp)
-      for (const item of data) {
-        const key = gkey(item.data_region, item.username)
-        userCache.set(key, item)
-      }
-    }
+    await fetchMissingPredictions(contestSlug, users, userCache)
 
     sendResponse(
       users.map(user => userCache.get(gkey(user.region, user.username)))
     )
   } catch (error) {
+    console.error('Failed to fetch EntrantHub predictions', error)
     sendResponse([])
   }
 }
