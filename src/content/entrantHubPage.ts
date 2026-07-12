@@ -13,8 +13,11 @@ const sendRankingData = (text = document.body?.innerText) => {
     if (!Array.isArray(data.items)) return false
 
     sent = true
-    const port = chrome.runtime.connect({ name: 'entrant-hub-page' })
-    port.postMessage({ url: location.href, data })
+    chrome.runtime.sendMessage({
+      type: 'entrant-hub-page',
+      url: location.href,
+      data,
+    })
     return true
   } catch {
     return false
