@@ -175,12 +175,12 @@ export const BetaApp: FC = () => {
                       <>
                         预测数据来自
                         <a
-                          href="https://lccn.lbao.site/"
+                          href="https://entranthub.com/contests/leetcode"
                           target="_blank"
                           rel="noreferrer"
                           style={{ paddingLeft: 2 }}
                         >
-                          lccn.lbao.site
+                          EntrantHub
                         </a>
                       </>
                     }

@@ -2,8 +2,8 @@
 import { gkey, graphqlApi } from '@/utils'
 import {
   fileIconData,
-  lbaoPredictorApi as predictorApi,
-  LbaoPredictorType,
+  entrantHubPredictorApi as predictorApi,
+  EntrantHubPredictorType,
 } from './utils'
 
 type GetPredictionMessage = {
@@ -54,7 +54,7 @@ async function getFileIcons(
   sendResponse(res)
 }
 
-const cache = new Map<string, Map<string, LbaoPredictorType>>()
+const cache = new Map<string, Map<string, EntrantHubPredictorType>>()
 async function getPredictionHandle(
   message: GetPredictionMessage,
   sender: chrome.runtime.MessageSender,
@@ -82,7 +82,7 @@ async function getPredictionHandle(
       users.map(user => userCache.get(gkey(user.region, user.username)))
     )
   } catch (error) {
-    // TODO
+    sendResponse([])
   }
 }
 async function getUserRanking(
